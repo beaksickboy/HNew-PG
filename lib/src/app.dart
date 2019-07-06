@@ -34,8 +34,12 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text('Flutter Play'),
       ),
       body: Column(
-        children: _articles.map((article) => Text(article.text)).toList(),
+        children: _articles.map(_article).toList(),
       ),
     );
+  }
+
+  Widget _article(Article e) {
+    return Text('e.age');
   }
 }
