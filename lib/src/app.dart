@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import './shared/models/article.dart';
 
@@ -33,13 +34,44 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text('Flutter Play'),
       ),
-      body: Column(
-        children: _articles.map(_article).toList(),
+      body: RefreshIndicator(
+        child: ListView(
+          children: _articles.map(_article).toList(),
+        ),
+        onRefresh: () async {
+          await Future.delayed(Duration(seconds: 1));
+          setState(() {
+            _articles.removeAt(0);
+          });
+        },
       ),
     );
   }
 
-  Widget _article(Article e) {
-    return Text('e.age');
+  Widget _article(Article article) {
+    return ExpansionTile(
+      title: Text(
+        article.text,
+        style: TextStyle(fontSize: 16.0),
+        maxLines: 2,
+      ),
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: <Widget>[
+            Text('${article.commentsCount} comments'),
+            IconButton(
+              icon: Icon(Icons.launch),
+              onPressed: () async {
+                final url = 'http://${article.domain}';
+                if (await canLaunch(url)) {
+                  launch(url);
+                }
+              },
+            )
+          ],
+        )
+      ],
+    );
   }
 }
