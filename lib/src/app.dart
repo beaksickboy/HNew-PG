@@ -50,6 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _article(Article article) {
     return ExpansionTile(
+      key: Key(article.text),
       title: Text(
         article.text,
         style: TextStyle(fontSize: 16.0),
