@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:hacker_new/src/shared/models/hn_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import './shared/models/article.dart';
 
+import 'dart:collection';
+
 class App extends StatelessWidget {
-  // This widget is the root of your application.
+  final NewsBloc bloc;
+
+  App({Key key, this.bloc}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -13,64 +20,65 @@ class App extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(
+        title: 'Flutter Demo Home Page',
+        bloc: bloc,
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  final NewsBloc bloc;
   final String title;
+
+  MyHomePage({Key key, this.title, this.bloc}) : super(key: key);
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<int> _ids = [
-    20496648,
-    20495739,
-    20496221,
-    20497237,
-    20495483,
-    20493947,
-    20496179,
-    20490017,
-    20494730,
-  ]; //articles;
-
-  Future<Article> _getArticle(int id) async {
-    final storyRes =
-        await http.get('https://hacker-news.firebaseio.com/v0/item/$id.json');
-    if (storyRes.statusCode == 200) {
-      return parseArticle(storyRes.body);
-    }
-  }
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Flutter Play'),
-        ),
-        body: ListView(
-          children: _ids
-              .map((id) => FutureBuilder<Article>(
-                    future: _getArticle(id),
-                    builder: (BuildContext context,
-                        AsyncSnapshot<Article> snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done) {
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: _article(snapshot.data),
-                        );
-                      } else {
-                        return Center(child: CircularProgressIndicator());
-                      }
-                    },
-                  ))
-              .toList(),
-        ));
+      appBar: AppBar(
+        title: Text('Flutter Play'),
+        leading: LoadingInfo(widget.bloc.isLoading),
+      ),
+      body: StreamBuilder<UnmodifiableListView<Article>>(
+          stream: widget.bloc.articles,
+          initialData: UnmodifiableListView<Article>([]),
+          builder: (context, snapshot) => ListView(
+                children: snapshot.data.map(_article).toList(),
+              )),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.keyboard_arrow_up),
+            title: Text('Top Stories'),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.new_releases),
+            title: Text('Top Stories'),
+          ),
+        ],
+        onTap: (index) {
+          if (index == 0) {
+            widget.bloc.storiesType.add(StoriesType.topStories);
+          } else {
+            widget.bloc.storiesType.add(StoriesType.newStories);
+          }
+
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      ),
+    );
   }
 
   Widget _article(Article article) {
@@ -98,6 +106,45 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         )
       ],
+    );
+  }
+}
+
+class LoadingInfo extends StatefulWidget {
+  final Stream<bool> _isLoading;
+
+  LoadingInfo(this._isLoading);
+
+  State<LoadingInfo> createState() => _LoadingInfoState();
+}
+
+class _LoadingInfoState extends State<LoadingInfo>
+    with TickerProviderStateMixin {
+  AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 1),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+      stream: widget._isLoading,
+      builder: (context, snapshot) {
+        _controller.forward().then((f) => _controller.reverse());
+//        if (snapshot.hasData && snapshot.data) {
+          return FadeTransition(
+            child: Icon(FontAwesomeIcons.hackerNews),
+            opacity: _controller,
+          );
+//        }
+        return Container();
+      },
     );
   }
 }
