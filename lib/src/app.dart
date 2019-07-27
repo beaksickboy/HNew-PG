@@ -136,13 +136,15 @@ class _LoadingInfoState extends State<LoadingInfo>
     return StreamBuilder(
       stream: widget._isLoading,
       builder: (context, snapshot) {
-        _controller.forward().then((f) => _controller.reverse());
-//        if (snapshot.hasData && snapshot.data) {
+        if (snapshot.hasData && snapshot.data) {
+          _controller.forward();
           return FadeTransition(
             child: Icon(FontAwesomeIcons.hackerNews),
-            opacity: _controller,
+            opacity: Tween(begin: .5, end: 1.0).animate(
+                CurvedAnimation(parent: _controller, curve: Curves.easeIn)),
           );
-//        }
+        }
+        _controller.reverse()
         return Container();
       },
     );
