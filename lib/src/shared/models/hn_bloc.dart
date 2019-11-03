@@ -27,19 +27,27 @@ class NewsBloc {
 
   final _isLoadingSubject = BehaviorSubject<bool>.seeded(false);
 
-  NewsBloc() {
-    _getArticles(_topIds);
+  static const String baseUrl = 'https://hacker-news.firebaseio.com/v0';
 
-    _storyTypeController.stream.listen((storiesType) {
-      List<int> ids;
-      if (storiesType == StoriesType.newStories) {
-        ids = _newIds;
-      } else {
-        ids = _topIds;
-      }
-      _getArticles(ids);
+  final cachedArticle = HashMap<int, Article>();
+
+
+  Future<void> initializeArticle() async {
+    _getArticles(await _getIds(StoriesType.topStories));
+  }
+
+  void close() {
+    _storyTypeController.close();
+  }
+
+  NewsBloc() {
+    initializeArticle();
+
+    _storyTypeController.stream.listen((storiesType) async {
+      _getArticles(await _getIds(storiesType));
     });
   }
+
 
   _getArticles(ids) {
     _isLoadingSubject.add(true);
@@ -49,23 +57,6 @@ class NewsBloc {
     });
   }
 
-
-  static List<int> _newIds = [
-    20496648,
-    20495739,
-    20496221,
-    20497237,
-    20495483
-  ]; //articles;
-
-  static List<int> _topIds = [
-    20493947,
-    20496179,
-    20490017,
-    20494730,
-  ];
-
-
   Future<Null> _updateArticles(List<int> ids) async {
     final futureArticles = ids.map((id) => _getArticle(id));
     final articles = await Future.wait(futureArticles);
@@ -74,11 +65,29 @@ class NewsBloc {
 
 
   Future<Article> _getArticle(int id) async {
-    final storyRes =
-    await http.get('https://hacker-news.firebaseio.com/v0/item/$id.json');
-    if (storyRes.statusCode == 200) {
-      return parseArticle(storyRes.body);
+    if (!cachedArticle.containsKey(id)) {
+      final storyRes =
+      await http.get('$baseUrl/item/$id.json');
+
+      if (storyRes.statusCode == 200) {
+        cachedArticle[id] = parseArticle(storyRes.body);
+      } else {
+        throw StateError('Failed Get Article');
+      }
     }
+    return cachedArticle[id];
   }
+
+  Future<List<int>> _getIds(StoriesType type) async {
+    final pieceUrl = type == StoriesType.topStories ? 'top' : 'new';
+    final url = '$baseUrl/${pieceUrl}stories.json';
+    final response = await http.get(url);
+    if (response.statusCode != 200) {
+      throw StateError('Can not fetch stories');
+    }
+    return parseTopStories(response.body).take(10).toList();
+  }
+
+
 
 }

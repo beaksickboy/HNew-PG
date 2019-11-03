@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hacker_new/src/shared/models/hn_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:http/http.dart' as http;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import './shared/models/article.dart';
@@ -63,7 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.new_releases),
-            title: Text('Top Stories'),
+            title: Text('New Stories'),
           ),
         ],
         onTap: (index) {
@@ -93,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            Text('${article.score} comments'),
+            Text('${article.descendants} comments'),
             IconButton(
               icon: Icon(Icons.launch),
               onPressed: () async {
@@ -144,7 +143,7 @@ class _LoadingInfoState extends State<LoadingInfo>
                 CurvedAnimation(parent: _controller, curve: Curves.easeIn)),
           );
         }
-        _controller.reverse()
+        _controller.reverse();
         return Container();
       },
     );

@@ -59,10 +59,8 @@ abstract class Article implements Built<Article, ArticleBuilder> {
 
 
 List<int> parseTopStories(String json) {
-//  throw UnimplementedError;
-//  final parsed = jsonDecode(json);
-//  return List<int>.from(parsed);
-  return null;
+  final parsed = jsonDecode(json);
+  return List<int>.from(parsed);
 }
 
 Article parseArticle(String json) {
