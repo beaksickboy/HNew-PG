@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hacker_new/src/shared/models/hn_bloc.dart';
+import 'package:hacker_new/src/widget/search_article.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -46,6 +47,24 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text('Flutter Play'),
         leading: LoadingInfo(widget.bloc.isLoading),
+        actions: <Widget>[
+          Builder(
+            builder: (context) => IconButton(
+              icon: Icon(Icons.search),
+              onPressed: () async {
+                final article = await showSearch(
+                  context: context,
+                  delegate: ArticleSearch(widget.bloc.articles),
+                );
+                if (article != null) {
+                  Scaffold.of(context).showSnackBar(SnackBar(
+                    content: Text('Navigate to ${article.url}'),
+                  ));
+                }
+              },
+            ),
+          )
+        ],
       ),
       body: StreamBuilder<UnmodifiableListView<Article>>(
           stream: widget.bloc.articles,
