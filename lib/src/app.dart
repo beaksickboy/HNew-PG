@@ -66,12 +66,26 @@ class _MyHomePageState extends State<MyHomePage> {
           )
         ],
       ),
-      body: StreamBuilder<UnmodifiableListView<Article>>(
-          stream: widget.bloc.articles,
-          initialData: UnmodifiableListView<Article>([]),
-          builder: (context, snapshot) => ListView(
+      body: _currentIndex == 0
+          ? StreamBuilder<UnmodifiableListView<Article>>(
+              stream: widget.bloc.topArticles,
+              initialData: UnmodifiableListView<Article>([]),
+              builder: (context, snapshot) => ListView(
+
+                // Use to preserver scrolling position
+                key: PageStorageKey(_currentIndex),
+
                 children: snapshot.data.map(_article).toList(),
-              )),
+              ),
+            )
+          : StreamBuilder<UnmodifiableListView<Article>>(
+              stream: widget.bloc.newArticles,
+              initialData: UnmodifiableListView<Article>([]),
+              builder: (context, snapshot) => ListView(
+                key: PageStorageKey(_currentIndex),
+                children: snapshot.data.map(_article).toList(),
+              ),
+            ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         items: [
@@ -98,10 +112,16 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
-
   Widget _article(Article article) {
     return ExpansionTile(
-      key: Key(article.title),
+
+  /*
+   * This widget is typically used with ListView to create an "expand / collapse" list entry.
+   *  When used with scrolling widgets like ListView, a unique PageStorageKey must be 
+   * specified to enable the ExpansionTile 
+   * to save and restore its expanded state when it is scrolled in and out of view.
+   */
+      key: PageStorageKey(article.title),
       title: Text(
         article.title,
         style: TextStyle(fontSize: 16.0),

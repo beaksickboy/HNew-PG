@@ -6,23 +6,27 @@ import 'dart:async';
 
 import './article.dart';
 
-enum StoriesType {
-  topStories,
-  newStories
-}
+enum StoriesType { topStories, newStories }
 
 class NewsBloc {
   var _articles = <Article>[];
 
   Stream<List<Article>> get articles => _articlesSubject.stream;
 
+  Stream<List<Article>> get topArticles => _topArticlesSubject.stream;
+
+  Stream<List<Article>> get newArticles => _newArticlesSubject.stream;
+
   final _articlesSubject = BehaviorSubject<UnmodifiableListView<Article>>();
+
+  final _topArticlesSubject = BehaviorSubject<UnmodifiableListView<Article>>();
+
+  final _newArticlesSubject = BehaviorSubject<UnmodifiableListView<Article>>();
 
   Sink<StoriesType> get storiesType => _storyTypeController.sink;
 
   final _storyTypeController = StreamController<StoriesType>();
-  
-  
+
   Stream<bool> get isLoading => _isLoadingSubject.stream;
 
   final _isLoadingSubject = BehaviorSubject<bool>.seeded(false);
@@ -31,9 +35,9 @@ class NewsBloc {
 
   final cachedArticle = HashMap<int, Article>();
 
-
   Future<void> initializeArticle() async {
-    _getArticles(await _getIds(StoriesType.topStories));
+    _getArticles(_topArticlesSubject, await _getIds(StoriesType.topStories));
+    _getArticles(_newArticlesSubject, await _getIds(StoriesType.newStories));
   }
 
   void close() {
@@ -44,15 +48,16 @@ class NewsBloc {
     initializeArticle();
 
     _storyTypeController.stream.listen((storiesType) async {
-      _getArticles(await _getIds(storiesType));
+      _getArticles(_topArticlesSubject, await _getIds(StoriesType.topStories));
+      _getArticles(_newArticlesSubject, await _getIds(StoriesType.newStories));
     });
   }
 
-
-  _getArticles(ids) {
+  _getArticles(BehaviorSubject<UnmodifiableListView<Article>> subject, ids) {
     _isLoadingSubject.add(true);
     _updateArticles(ids).then((_) {
-      _articlesSubject.add(UnmodifiableListView(_articles));
+      // _articlesSubject.add(UnmodifiableListView(_articles));
+      subject.add(UnmodifiableListView(_articles));
       _isLoadingSubject.add(false);
     });
   }
@@ -63,11 +68,9 @@ class NewsBloc {
     _articles = articles;
   }
 
-
   Future<Article> _getArticle(int id) async {
     if (!cachedArticle.containsKey(id)) {
-      final storyRes =
-      await http.get('$baseUrl/item/$id.json');
+      final storyRes = await http.get('$baseUrl/item/$id.json');
 
       if (storyRes.statusCode == 200) {
         cachedArticle[id] = parseArticle(storyRes.body);
@@ -87,7 +90,4 @@ class NewsBloc {
     }
     return parseTopStories(response.body).take(10).toList();
   }
-
-
-
 }

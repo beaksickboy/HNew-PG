@@ -7,3 +7,4 @@ void main() {
   final hnBloc = NewsBloc();
   runApp(App(bloc: hnBloc));
 }
+
